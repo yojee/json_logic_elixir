@@ -304,6 +304,12 @@ defmodule JsonLogicTest do
 
       assert JsonLogic.apply(rule, data) == false
     end
+
+    test "any_in takes string" do
+      rule = %{"any_in" => [%{"var" => "item_types"}, "package"]}
+      data = %{"item_types" => ["package", "pallet"], "service_type" => "Same Day"}
+      assert JsonLogic.apply(rule, data) == true
+    end
   end
 
   describe "not_in" do
@@ -335,6 +341,15 @@ defmodule JsonLogicTest do
       }
 
       assert JsonLogic.apply(rule, data) == false
+    end
+
+    test "not_in takes string" do
+      rule = %{"not_in" => [%{"var" => "item_types"}, "package"]}
+      data = %{"item_types" => ["package"], "service_type" => "Same Day"}
+      assert JsonLogic.apply(rule, data) == false
+
+      data = %{"item_types" => ["package", "pallet"], "service_type" => "Same Day"}
+      assert JsonLogic.apply(rule, data) == true
     end
   end
 end
