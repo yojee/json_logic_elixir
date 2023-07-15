@@ -1918,4 +1918,62 @@ defmodule JsonLogicTest do
 
     assert Decimal.lt?(diff, delta), message
   end
+
+  describe "has" do
+    test "input(data[var]) is an array, if any element in the input array is inside the rule, return true" do
+      rule = %{"has" => [%{"var" => "item_types"}, ["package", "document"]]}
+      data = %{"item_types" => ["package", "pallet"], "service_type" => "Same Day"}
+      assert JsonLogic.resolve(rule, data) == true
+
+      rule = %{
+        "and" => [
+          %{"has" => [%{"var" => "item_types"}, ["package", "document"]]},
+          %{"==" => [%{"var" => "service_type"}, "Same Day"]}
+        ]
+      }
+
+      assert JsonLogic.resolve(rule, data) == true
+
+      rule = %{
+        "and" => [
+          %{"has" => [%{"var" => "item_types"}, ["package", "document"]]},
+          %{"==" => [%{"var" => "service_type"}, "Next Day"]}
+        ]
+      }
+
+      assert JsonLogic.resolve(rule, data) == false
+    end
+  end
+
+  describe "not_has" do
+    test "input(data[var)]) is an array, if there are any elements in the input array that is not inside the rule, return true" do
+      rule = %{"not_has" => [%{"var" => "item_types"}, ["package", "document"]]}
+      data = %{"item_types" => ["package"], "service_type" => "Same Day"}
+      assert JsonLogic.resolve(rule, data) == false
+
+      data = %{"item_types" => ["package", "document"], "service_type" => "Same Day"}
+      assert JsonLogic.resolve(rule, data) == false
+
+      data = %{"item_types" => ["package", "pallet"], "service_type" => "Same Day"}
+      assert JsonLogic.resolve(rule, data) == true
+
+      rule = %{
+        "and" => [
+          %{"has" => [%{"var" => "item_types"}, ["package", "document"]]},
+          %{"==" => [%{"var" => "service_type"}, "Same Day"]}
+        ]
+      }
+
+      assert JsonLogic.resolve(rule, data) == true
+
+      rule = %{
+        "and" => [
+          %{"has" => [%{"var" => "item_types"}, ["package", "document"]]},
+          %{"==" => [%{"var" => "service_type"}, "Next Day"]}
+        ]
+      }
+
+      assert JsonLogic.resolve(rule, data) == false
+    end
+  end
 end

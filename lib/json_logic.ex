@@ -625,6 +625,32 @@ defmodule JsonLogic do
     operation("in", [resolve(find, data), resolve(from, data)], data)
   end
 
+  defp operation("has_this", [member, d], data) do
+    operation("has", [member, [d]], data)
+  end
+
+  defp operation("not_has_this", [member, d], data) do
+    operation("not_has", [member, [d]], data)
+  end
+
+  defp operation("has", [member, list], data) when is_list(list) do
+    input_list = JsonLogic.resolve(member, data)
+
+    input_list
+    |> Enum.any?(fn val ->
+      Enum.member?(list, val)
+    end)
+  end
+
+  defp operation("not_has", [member, list], data) when is_list(list) do
+    input_list = JsonLogic.resolve(member, data)
+
+    input_list
+    |> Enum.any?(fn val ->
+      not Enum.member?(list, val)
+    end)
+  end
+
   defp operation("cat", list, data) when is_list(list) do
     Enum.map_join(list, "", &resolve(&1, data))
   end
