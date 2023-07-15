@@ -1919,6 +1919,67 @@ defmodule JsonLogicTest do
     assert Decimal.lt?(diff, delta), message
   end
 
+  describe "custom nil handling tests" do
+    test "cannot compare nil" do
+      assert JsonLogic.resolve(%{"==" => [nil, nil]}) == true
+      assert JsonLogic.resolve(%{"<=" => [nil, nil]}) == true
+      assert JsonLogic.resolve(%{">=" => [nil, nil]}) == true
+
+      assert JsonLogic.resolve(%{"<=" => [%{"var" => "optional"}, nil]}, %{"optional" => nil}) ==
+               true
+
+      assert JsonLogic.resolve(%{">=" => [%{"var" => "optional"}, nil]}, %{"optional" => nil}) ==
+               true
+
+      assert JsonLogic.resolve(%{"==" => [%{"var" => "optional"}, nil]}, %{"optional" => nil}) ==
+               true
+
+      assert JsonLogic.resolve(%{">" => [5, nil]}) == false
+      assert JsonLogic.resolve(%{">" => [nil, 5]}) == false
+      assert JsonLogic.resolve(%{">=" => [5, nil]}) == false
+
+      assert JsonLogic.resolve(%{"<" => [5, nil]}) == false
+      assert JsonLogic.resolve(%{"<" => [nil, 5]}) == false
+      assert JsonLogic.resolve(%{"<=" => [5, nil]}) == false
+
+      assert JsonLogic.resolve(%{">" => [%{"var" => "quantity"}, 25]}, %{"abc" => 1}) == false
+      assert JsonLogic.resolve(%{"<" => [%{"var" => "quantity"}, 25]}, %{"abc" => 1}) == false
+
+      rules = %{
+        "and" => [
+          %{">" => [%{"var" => "quantity"}, 25]},
+          %{">" => [%{"var" => "durations"}, 23]}
+        ]
+      }
+
+      data = %{"code" => "FUM", "occurence" => 15}
+      assert JsonLogic.resolve(rules, data) == false
+
+      rules = %{
+        "or" => [
+          %{
+            "and" => [
+              %{">" => [%{"var" => "accessorial_service.occurence"}, 5]},
+              %{"==" => [%{"var" => "accessorial_service.code"}, "WAT"]}
+            ]
+          },
+          %{
+            "and" => [
+              %{">" => [%{"var" => "accessorial_service.occurence"}, 0]},
+              %{"==" => [%{"var" => "accessorial_service.code"}, "washing"]}
+            ]
+          }
+        ]
+      }
+
+      data = %{"accessorial_service" => %{"code" => "WAT", "occurence" => 15}}
+      assert JsonLogic.resolve(rules, data) == true
+
+      data = %{"accessorial_service" => %{"code" => "FUM", "occurence" => 15}}
+      assert JsonLogic.resolve(rules, data) == false
+    end
+  end
+
   describe "has" do
     test "input(data[var]) is an array, if any element in the input array is inside the rule, return true" do
       rule = %{"has" => [%{"var" => "item_types"}, ["package", "document"]]}
